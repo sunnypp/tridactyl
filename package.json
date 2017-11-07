@@ -2,7 +2,10 @@
   "name": "tridactyl",
   "version": "0.1.0",
   "description": "Vimperator/Pentadactyl successor",
-  "dependencies": {},
+  "dependencies": {
+    "@types/nearley": "^2.11.0",
+    "nearley": "^2.11.0"
+  },
   "devDependencies": {
     "@types/jest": "^21.1.4",
     "@types/node": "^8.0.46",
