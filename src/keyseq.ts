@@ -156,8 +156,24 @@ export function bracketexprToKey(be: string): [MinimalKey, string] {
     }
 }
 
-export function hasModifiers(keyEvent: MinimalKey) {
-    return keyEvent.ctrlKey || keyEvent.altKey || keyEvent.metaKey || keyEvent.shiftKey
+import {Parser} from './nearley_utils'
+import * as bracketexpr_grammar from './grammars/bracketexpr'
+
+const bracketexpr_parser = new Parser(bracketexpr_grammar)
+
+export function bracketexprToKey2(inputStr) {
+    if (inputStr.indexOf('>') > 0) {
+        try {
+            const [[modifiers, key], remainder] = bracketexpr_parser.feedUntilError(inputStr)
+            return [new MinimalKey(key, modifiers), remainder]
+        } catch (e) {
+            // No valid bracketExpr
+            return [new MinimalKey('<'), inputStr.slice(1)]
+        }
+    } else {
+        // No end bracket to match == no valid bracketExpr
+        return [new MinimalKey('<'), inputStr.slice(1)]
+    }
 }
 
 export function mapstrToKeyseq(mapstr: string): MinimalKey[] {
@@ -173,4 +189,8 @@ export function mapstrToKeyseq(mapstr: string): MinimalKey[] {
         }
     }
     return keyseq
+}
+
+export function hasModifiers(keyEvent: MinimalKey) {
+    return keyEvent.ctrlKey || keyEvent.altKey || keyEvent.metaKey || keyEvent.shiftKey
 }
