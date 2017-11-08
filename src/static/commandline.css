@@ -28,7 +28,14 @@ img {
   height: auto;
   /* line-height: 1.5em; */
   font-family: "monospace", "Courier New";
-  overflow: hidden;
+  /* allow up/down scrolling if needed */
+  overflow-x: hidden;
+  overflow-y: visible;
+  /* "percentage" is % of parent; vh uses whole window. I think. */
+  /* max-height causes the completions to appear at the wrong height */
+  /* I suspect it is because it somehow is making calculations from the top down,
+   * but it needs to go bottom up. */
+  max-height: 40vh;
   white-space: pre;
   width: 100%;
   z-index: 9998;
