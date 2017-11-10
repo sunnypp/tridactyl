@@ -1,12 +1,12 @@
 import {l, activeTabId} from './lib/webext'
 
-export type TabMessageType = 
+export type TabMessageType =
     "excmd_content" |
     "keydown_content" |
     "commandline_content" |
     "commandline_frame" |
     "hinting_content"
-export type NonTabMessageType = 
+export type NonTabMessageType =
     "keydown_background" |
     "commandline_background"
 export type MessageType = TabMessageType | NonTabMessageType
