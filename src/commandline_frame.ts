@@ -126,15 +126,15 @@ export function fillcmdline(newcommand?: string, trailspace = true){
 }
 
 /* Rebind completionsrc and re-render. */
-export async function changecompletions(completiontype: string, items?: any): Promise<void> {
+export async function changecompletions(completiontype: string): Promise<void> {
     completionsrc = undefined
     switch (completiontype) {
         case "buffers":
-            if (!items) {
-                Messaging.message("commandline_background", "currentWindowTabs")
-                return
-            }
-            console.log(items)
+            console.log("msgtest", await Messaging.message("commandline_background", "return5"))
+            console.log("msgpromisetest", await Messaging.message("commandline_background", "return5later"))
+            console.log("msgpromisetest2", await Messaging.message("commandline_background", "returnlater"))
+            const items = await Messaging.message("commandline_background", "currentWindowTabs")
+            console.log("items", items)
             completionsrc = Completions.getBuffersFromTabs(items)
             break
     }
