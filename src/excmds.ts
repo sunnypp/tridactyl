@@ -66,6 +66,23 @@ function tabSetActive(id: number) {
 // }}}
 
 // {{{ PAGE CONTEXT
+//
+
+/** Find in page */
+//#content
+export function find(...findarr: string[]){
+    let findstr = findarr.join(" ")
+    // enter find mode
+    let children = document.body.childNodes
+    let a = document.querySelectorAll("//*[text()[contains('contains')]]")
+    // doesn't work ^, need to use an xpath
+
+}
+
+//#content_helper
+function __find (findstr,n,next=true){
+
+}
 
 /** Blur (unfocus) the active element */
 //#content
