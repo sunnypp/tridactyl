@@ -151,6 +151,11 @@ export function open(...urlarr: string[]) {
     window.location.href = forceURI(url)
 }
 
+//#content
+export function exec(js: string) {
+    eval(js)
+}
+
 //#background
 export function help(...urlarr: string[]) {
     let url = urlarr.join(" ")
