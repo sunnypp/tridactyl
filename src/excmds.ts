@@ -227,8 +227,8 @@ export function open(...urlarr: string[]) {
 }
 
 //#content
-export function exec(js: string) {
-    eval(js)
+export function exec(...jsarr: string[]) {
+    eval(jsarr.join(" "))
 }
 
 /** Show this page.
