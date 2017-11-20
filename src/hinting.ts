@@ -39,6 +39,7 @@ let modeState: HintState = undefined
 
 /** For each hintable element, add a hint */
 export function hintPage(hintableElements: Element[], onSelect: HintSelectedCallback) {
+    state.mode = 'hint'
     modeState = new HintState()
     for (let [el, name] of izip(hintableElements, hintnames())) {
         modeState.hintchars += name
@@ -128,7 +129,6 @@ const HINTCHARS = 'hjklasdfgyuiopqwertnmzxcvb'
 
 /** Show only hints prefixed by fstr. Focus first match */
 function filter(fstr) {
-    console.log(fstr)
     const active: Hint[] = []
     let foundMatch
     for (let h of modeState.hints) {
@@ -153,6 +153,7 @@ function filter(fstr) {
 function reset() {
     modeState.destructor()
     modeState = undefined
+    state.mode = 'normal'
 }
 
 /** If key is in hintchars, add it to filtstr and filter */
@@ -252,13 +253,17 @@ select,
 [tabindex]
 `
 
-import browserBg from './lib/browser_proxy'
+import {activeTab, browserBg, l, firefoxVersionAtLeast} from './lib/webext'
 
-function openInBackground(url: string) {
-    return browserBg.tabs.create({
+async function openInBackground(url: string) {
+    const thisTab = await activeTab()
+    const options: any = {
         active: false,
         url,
-    })
+        index: thisTab.index + 1,
+    }
+    if (await l(firefoxVersionAtLeast(57))) options.openerTabId = thisTab.id
+    return browserBg.tabs.create(options)
 }
 
 /** if `target === _blank` clicking the link is treated as opening a popup and is blocked. Use webext API to avoid that. */
@@ -293,7 +298,6 @@ function hintPageOpenInBackground() {
 }
 
 function hintPageSimple() {
-    console.log("Hinting!")
     hintPage(hintables(), hint=>{
         simulateClick(hint.target)
     })
@@ -301,9 +305,9 @@ function hintPageSimple() {
 
 function selectFocusedHint() {
     console.log("Selecting hint.", state.mode)
-    state.mode = 'normal'
-    modeState.focusedHint.select()
+    const focused = modeState.focusedHint
     reset()
+    focused.select()
 }
 
 import {addListener, attributeCaller} from './messaging'
