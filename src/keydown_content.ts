@@ -3,6 +3,7 @@
 import * as Messaging from './messaging'
 import * as msgsafe from './msgsafe'
 import {isTextEditable} from './dom'
+import {isSimpleKey} from './keyseq'
 
 function keyeventHandler(ke: KeyboardEvent) {
     // Ignore JS-generated events for security reasons.
@@ -10,7 +11,7 @@ function keyeventHandler(ke: KeyboardEvent) {
 
     // Bad workaround: never suppress events in an editable field
     // and never suppress keys pressed with modifiers
-    if (! (isTextEditable(ke.target as Node) || ke.ctrlKey || ke.altKey)) {
+    if (state.mode === 'input' || ! (isTextEditable(ke.target as Node) || ke.ctrlKey || ke.altKey)) {
         suppressKey(ke)
     }
 
@@ -29,6 +30,7 @@ import state from './state'
 
 // Keys not to suppress in normal mode.
 const normalmodewhitelist = [
+    // comment line below out once find mode is done
     '/',
     "'",
     ' ',
@@ -46,20 +48,31 @@ function TerribleModeSpecificSuppression(ke: KeyboardEvent) {
             // StartsWith happens to work for our maps so far. Obviously won't in the future.
             /* if (Object.getOwnPropertyNames(nmaps).find((map) => map.startsWith(ke.key))) { */
 
-            if (! ke.ctrlKey && ! ke.metaKey && ! ke.altKey
-                && ke.key.length === 1
-                && ! normalmodewhitelist.includes(ke.key)
-            ) {
+            if (isSimpleKey(ke) && ! normalmodewhitelist.includes(ke.key)) {
                 ke.preventDefault()
                 ke.stopImmediatePropagation()
             }
             break
+        // Hintmode can't clean up after itself yet, so it needs to block more FF shortcuts.
         case "hint":
+        case "find":
             if (! hintmodewhitelist.includes(ke.key)) {
                 ke.preventDefault()
                 ke.stopImmediatePropagation()
             }
             break;
+        case "gobble":
+            if (isSimpleKey(ke) || ke.key === "Escape") {
+                ke.preventDefault()
+                ke.stopImmediatePropagation()
+            }
+            break
+        case "input":
+            if (ke.key === "Tab") {
+                ke.preventDefault()
+                ke.stopImmediatePropagation()
+            }
+            break
         case "ignore":
             break;
         case "insert":

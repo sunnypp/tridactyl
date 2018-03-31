@@ -1,13 +1,21 @@
 import {MsgSafeKeyboardEvent, MsgSafeNode} from './msgsafe'
 import {isTextEditable} from './dom'
-import {parser as exmode_parser} from './parsers/exmode'
+import {isSimpleKey} from './keyseq'
 import state from "./state"
+import {repeat} from './excmds_background'
+import Logger from "./logging"
 
+import {parser as exmode_parser} from './parsers/exmode'
 import {parser as hintmode_parser} from './hinting_background'
+import {parser as findmode_parser} from './finding_background'
 import * as normalmode from "./parsers/normalmode"
 import * as insertmode from "./parsers/insertmode"
 import * as ignoremode from "./parsers/ignoremode"
+import * as gobblemode from './parsers/gobblemode'
+import * as inputmode from './parsers/inputmode'
 
+
+const logger = new Logger('controller')
 
 /** Accepts keyevents, resolves them to maps, maps to exstrs, executes exstrs */
 function *ParserController () {
@@ -16,6 +24,9 @@ function *ParserController () {
         insert: insertmode.parser,
         ignore: ignoremode.parser,
         hint: hintmode_parser,
+        find: findmode_parser,
+        gobble: gobblemode.parser,
+        input: inputmode.parser,
     }
 
     while (true) {
@@ -26,21 +37,25 @@ function *ParserController () {
                 let keyevent: MsgSafeKeyboardEvent = yield
                 let keypress = keyevent.key
 
-                // TODO: think about if this is robust
-                if (state.mode != "ignore" && state.mode != "hint") {
+                // This code was sort of the cause of the most serious bug in Tridactyl
+                // to date (March 2018).
+                // https://github.com/cmcaine/tridactyl/issues/311
+                if (state.mode != "ignore" && state.mode != "hint" && state.mode != "input" && state.mode != "find") {
                     if (isTextEditable(keyevent.target)) {
-                        state.mode = "insert"
+                        if (state.mode !== 'insert') {
+                            state.mode = "insert"
+                        }
                     } else if (state.mode === 'insert') {
                         state.mode = "normal"
                     }
                 }
-                console.log(keyevent, state.mode)
+                logger.debug(keyevent, state.mode)
 
                 // Special keys (e.g. Backspace) are not handled properly
                 // yet. So drop them. This also drops all modifier keys.
                 // When we put in handling for other special keys, remember
                 // to continue to ban modifiers.
-                if (state.mode === 'normal' && (keypress.length > 1 || keyevent.ctrlKey || keyevent.altKey)) {
+                if (state.mode === 'normal' && ! isSimpleKey(keyevent)) {
                     continue
                 }
 
@@ -54,7 +69,7 @@ function *ParserController () {
                         response = (parsers[state.mode] as any)([keyevent])
                         break
                 }
-                console.debug(keys, response)
+                logger.debug(keys, response)
 
                 if (response.ex_str){
                     ex_str = response.ex_str
@@ -84,6 +99,9 @@ export function acceptExCmd(ex_str: string) {
     // TODO: Errors should go to CommandLine.
     try {
         let [func, args] = exmode_parser(ex_str)
+        // Stop the repeat excmd from recursing.
+        if (func !== repeat)
+            state.last_ex_str = ex_str
         try {
             func(...args)
         } catch (e) {
@@ -98,7 +116,7 @@ export function acceptExCmd(ex_str: string) {
 
 import {activeTabId} from './lib/webext'
 browser.webNavigation.onBeforeNavigate.addListener(async function (details) {
-    if (details.tabId == await activeTabId()) {
+    if (details.frameId === 0 && details.tabId === await activeTabId()) {
         state.mode = 'normal'
     }
 })
